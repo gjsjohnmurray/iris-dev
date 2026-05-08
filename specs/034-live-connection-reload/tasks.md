@@ -10,16 +10,16 @@
 
 **Purpose**: Add new types and stubs, update `IrisTools` struct — no behavior change yet.
 
-- [ ] T001 Define `ConnectionSource` enum (`ConfigFile | EnvVars | IrisSelectContainer | AutoDiscovered`) in `crates/iris-dev-core/src/tools/mod.rs`
-- [ ] T002 Define `ConnectionState` struct (fields: `iris: Option<Arc<IrisConnection>>`, `source: ConnectionSource`, `config_file: Option<PathBuf>`, `loaded_at: SystemTime`, `write_tools_enabled: bool`, `config_parse_error: Option<String>`) in `crates/iris-dev-core/src/tools/mod.rs`
-- [ ] T003 Define `ConfigWatcher` struct (fields: `config_path: PathBuf`, `last_mtime: SystemTime`) in `crates/iris-dev-core/src/tools/mod.rs`
-- [ ] T004 Replace `IrisTools.iris: Option<Arc<IrisConnection>>` and `IrisTools.write_tools_enabled: bool` with `connection: Arc<Mutex<ConnectionState>>` and `config_watcher: Option<ConfigWatcher>` in `crates/iris-dev-core/src/tools/mod.rs` — update all constructor functions (`new`, `new_with_toolset`, `with_registry`, `with_registry_and_toolset`) to build `ConnectionState` from the `Option<IrisConnection>` param and wrap in `Arc::new(Mutex::new(...))`; also update the `with_registry_and_toolset()` signature to accept an additional `config_watcher: Option<ConfigWatcher>` parameter (T025 in `mcp.rs` passes this value; all other call sites pass `None`)
-- [ ] T005 Update `get_iris()` in `crates/iris-dev-core/src/tools/mod.rs` — change return type from `Result<&IrisConnection, McpError>` to `Result<Arc<IrisConnection>, McpError>`; lock `self.connection`, clone `iris` Arc out of `ConnectionState`, release lock
-- [ ] T006 Update all `self.write_tools_enabled` references in `crates/iris-dev-core/src/tools/mod.rs` to read from `self.connection.lock().unwrap().write_tools_enabled`
-- [ ] T007 [P] Create empty test stub `crates/iris-dev-core/tests/unit/test_live_reload.rs`
-- [ ] T008 [P] Create empty E2E test stub `crates/iris-dev-core/tests/integration/test_live_reload_e2e.rs`
-- [ ] T009 [P] Add `[[test]]` entries for both new test files to `crates/iris-dev-core/Cargo.toml`
-- [ ] T010 Verify `cargo check -p iris-dev-core` passes with all struct changes
+- [x] T001 Define `ConnectionSource` enum (`ConfigFile | EnvVars | IrisSelectContainer | AutoDiscovered`) in `crates/iris-dev-core/src/tools/mod.rs`
+- [x] T002 Define `ConnectionState` struct (fields: `iris: Option<Arc<IrisConnection>>`, `source: ConnectionSource`, `config_file: Option<PathBuf>`, `loaded_at: SystemTime`, `write_tools_enabled: bool`, `config_parse_error: Option<String>`) in `crates/iris-dev-core/src/tools/mod.rs`
+- [x] T003 Define `ConfigWatcher` struct (fields: `config_path: PathBuf`, `last_mtime: SystemTime`) in `crates/iris-dev-core/src/tools/mod.rs`
+- [x] T004 Replace `IrisTools.iris: Option<Arc<IrisConnection>>` and `IrisTools.write_tools_enabled: bool` with `connection: Arc<Mutex<ConnectionState>>` and `config_watcher: Option<ConfigWatcher>` in `crates/iris-dev-core/src/tools/mod.rs` — update all constructor functions (`new`, `new_with_toolset`, `with_registry`, `with_registry_and_toolset`) to build `ConnectionState` from the `Option<IrisConnection>` param and wrap in `Arc::new(Mutex::new(...))`; also update the `with_registry_and_toolset()` signature to accept an additional `config_watcher: Option<ConfigWatcher>` parameter (T025 in `mcp.rs` passes this value; all other call sites pass `None`)
+- [x] T005 Update `get_iris()` in `crates/iris-dev-core/src/tools/mod.rs` — change return type from `Result<&IrisConnection, McpError>` to `Result<Arc<IrisConnection>, McpError>`; lock `self.connection`, clone `iris` Arc out of `ConnectionState`, release lock
+- [x] T006 Update all `self.write_tools_enabled` references in `crates/iris-dev-core/src/tools/mod.rs` to read from `self.connection.lock().unwrap().write_tools_enabled`
+- [x] T007 [P] Create empty test stub `crates/iris-dev-core/tests/unit/test_live_reload.rs`
+- [x] T008 [P] Create empty E2E test stub `crates/iris-dev-core/tests/integration/test_live_reload_e2e.rs`
+- [x] T009 [P] Add `[[test]]` entries for both new test files to `crates/iris-dev-core/Cargo.toml`
+- [x] T010 Verify `cargo check -p iris-dev-core` passes with all struct changes
 
 **Checkpoint**: `cargo check` clean. New types defined. `get_iris()` returns `Arc<IrisConnection>`. All existing call sites compile.
 
@@ -31,27 +31,27 @@
 
 ### Tests for Phase 2 (write first — must FAIL before implementation)
 
-- [ ] T011 [P] Write unit test: `ConnectionState::new_from_none()` returns correct defaults (`connected: false`, `write_tools_enabled: true`, `source: EnvVars`) in `tests/unit/test_live_reload.rs` (WRITE FIRST, must FAIL)
-- [ ] T012 [P] Write unit test: `ConnectionSource` serializes to correct strings (`"config_file"`, `"env_vars"`, `"iris_select_container"`, `"auto_discovered"`) in `test_live_reload.rs` (WRITE FIRST, must FAIL)
-- [ ] T013 [P] Write unit test: `ConfigWatcher::new(path)` initializes with current file mtime — call `stat()` at construction time in `test_live_reload.rs` (WRITE FIRST, must FAIL)
-- [ ] T014 [P] Write unit test: `IrisTools` with `None` iris has `connection.lock().iris == None` and `write_tools_enabled == true` in `test_live_reload.rs` (WRITE FIRST, must FAIL)
+- [x] T011 [P] Write unit test: `ConnectionState::new_from_none()` returns correct defaults (`connected: false`, `write_tools_enabled: true`, `source: EnvVars`) in `tests/unit/test_live_reload.rs` (WRITE FIRST, must FAIL)
+- [x] T012 [P] Write unit test: `ConnectionSource` serializes to correct strings (`"config_file"`, `"env_vars"`, `"iris_select_container"`, `"auto_discovered"`) in `test_live_reload.rs` (WRITE FIRST, must FAIL)
+- [x] T013 [P] Write unit test: `ConfigWatcher::new(path)` initializes with current file mtime — call `stat()` at construction time in `test_live_reload.rs` (WRITE FIRST, must FAIL)
+- [x] T014 [P] Write unit test: `IrisTools` with `None` iris has `connection.lock().iris == None` and `write_tools_enabled == true` in `test_live_reload.rs` (WRITE FIRST, must FAIL)
 
 ### TDD Gate
 
-- [ ] T015 **GATE**: Confirm `cargo test --test test_live_reload` produces FAILURES (types exist but methods don't yet). Do not proceed until T011–T014 fail to compile or assert.
+- [x] T015 **GATE**: Confirm `cargo test --test test_live_reload` produces FAILURES (types exist but methods don't yet). Do not proceed until T011–T014 fail to compile or assert.
 
 ### Implementation for Phase 2
 
-- [ ] T016 Implement `ConnectionState::new_disconnected(source: ConnectionSource) -> Self` constructor in `crates/iris-dev-core/src/tools/mod.rs` — sets `iris: None`, `write_tools_enabled: true`, `loaded_at: SystemTime::now()`, `config_parse_error: None`
-- [ ] T017 Implement `ConnectionState::from_iris(iris: IrisConnection, source: ConnectionSource, config_file: Option<PathBuf>) -> Self` in `mod.rs` — sets `write_tools_enabled: iris.is_write_allowed()`, wraps iris in Arc, records timestamp
-- [ ] T018 Implement `IrisTools::check_reload(&self) -> ()` async method in `mod.rs`:
+- [x] T016 Implement `ConnectionState::new_disconnected(source: ConnectionSource) -> Self` constructor in `crates/iris-dev-core/src/tools/mod.rs` — sets `iris: None`, `write_tools_enabled: true`, `loaded_at: SystemTime::now()`, `config_parse_error: None`
+- [x] T017 Implement `ConnectionState::from_iris(iris: IrisConnection, source: ConnectionSource, config_file: Option<PathBuf>) -> Self` in `mod.rs` — sets `write_tools_enabled: iris.is_write_allowed()`, wraps iris in Arc, records timestamp
+- [x] T018 Implement `IrisTools::check_reload(&self) -> ()` async method in `mod.rs`:
   - If `self.config_watcher` is None → return immediately
   - `stat()` the config path via `std::fs::metadata(&watcher.config_path)`
   - If mtime <= `watcher.last_mtime` → return immediately
   - Reload config via `load_workspace_config()`, build new `IrisConnection`, call `.probe().await`
   - On success: lock `self.connection`, replace with new `ConnectionState(source=ConfigFile)`, update `watcher.last_mtime`
   - On failure: lock `self.connection`, set `config_parse_error` only, preserve existing `iris`
-- [ ] T019 Verify T011–T014 all pass GREEN: `cargo test --test test_live_reload`
+- [x] T019 Verify T011–T014 all pass GREEN: `cargo test --test test_live_reload`
 
 **Checkpoint**: All foundational unit tests green. `check_reload()` implemented.
 
@@ -65,19 +65,19 @@
 
 ### Tests for US1 (write first — must FAIL before implementation)
 
-- [ ] T020 [P] [US1] Write unit test: `check_reload()` with a config file whose mtime has changed but new connection is unreachable → `config_parse_error` is set, old connection preserved in `test_live_reload.rs` (WRITE FIRST, must FAIL)
-- [ ] T021 [P] [US1] Write unit test: `check_reload()` when `config_watcher` is None → no-op, no panic in `test_live_reload.rs` (WRITE FIRST, must FAIL)
-- [ ] T022 [US1] Write E2E test (`#[ignore]`): update `.iris-dev.toml` pointing at `iris-dev-iris`, verify first tool call works, update to point at unreachable container, verify next call returns `IRIS_UNREACHABLE` (not crash) in `tests/integration/test_live_reload_e2e.rs` (WRITE FIRST, must FAIL)
+- [x] T020 [P] [US1] Write unit test: `check_reload()` with a config file whose mtime has changed but new connection is unreachable → `config_parse_error` is set, old connection preserved in `test_live_reload.rs` (WRITE FIRST, must FAIL)
+- [x] T021 [P] [US1] Write unit test: `check_reload()` when `config_watcher` is None → no-op, no panic in `test_live_reload.rs` (WRITE FIRST, must FAIL)
+- [x] T022 [US1] Write E2E test (`#[ignore]`): update `.iris-dev.toml` pointing at `iris-dev-iris`, verify first tool call works, update to point at unreachable container, verify next call returns `IRIS_UNREACHABLE` (not crash) in `tests/integration/test_live_reload_e2e.rs` (WRITE FIRST, must FAIL)
 
 ### TDD Gate
 
-- [ ] T023 [US1] **GATE**: Confirm T020–T022 all FAIL before implementation below
+- [x] T023 [US1] **GATE**: Confirm T020–T022 all FAIL before implementation below
 
 ### Implementation for US1
 
-- [ ] T024 [US1] Wire `self.check_reload().await` at the top of every tool handler in `crates/iris-dev-core/src/tools/mod.rs` — add the call before any `let iris = self.get_iris()?` call in each `async fn` handler. Search for all `#[tool(` annotated methods and add the call at the start of the method body.
-- [ ] T025 [US1] Pass the resolved `.iris-dev.toml` path to `IrisTools` at construction in `crates/iris-dev-bin/src/cmd/mcp.rs` — after `apply_workspace_config()`, compute the config path via `workspace_root().join(".iris-dev.toml")`; if the file exists, build `ConfigWatcher` and pass to `with_registry_and_toolset()` via a new optional parameter or field setter
-- [ ] T026 [US1] **GATE-GREEN**: Run E2E T022 against `iris-dev-iris` — must pass
+- [x] T024 [US1] Wire `self.check_reload().await` at the top of every tool handler in `crates/iris-dev-core/src/tools/mod.rs` — add the call before any `let iris = self.get_iris()?` call in each `async fn` handler. Search for all `#[tool(` annotated methods and add the call at the start of the method body.
+- [x] T025 [US1] Pass the resolved `.iris-dev.toml` path to `IrisTools` at construction in `crates/iris-dev-bin/src/cmd/mcp.rs` — after `apply_workspace_config()`, compute the config path via `workspace_root().join(".iris-dev.toml")`; if the file exists, build `ConfigWatcher` and pass to `with_registry_and_toolset()` via a new optional parameter or field setter
+- [x] T026 [US1] **GATE-GREEN**: Run E2E T022 against `iris-dev-iris` — must pass
 
 **Phase gate**: T022 E2E passes. Config file hot-reload works end-to-end.
 
@@ -91,20 +91,20 @@
 
 ### Tests for US2 (write first — must FAIL before implementation)
 
-- [ ] T027 [P] [US2] Write unit test: `iris_select_container` with unreachable container → existing connection preserved, error returned in `test_live_reload.rs` (WRITE FIRST, must FAIL)
-- [ ] T028 [P] [US2] Write unit test: after simulated `iris_select_container` swap, `connection.lock().source == ConnectionSource::IrisSelectContainer` in `test_live_reload.rs` (WRITE FIRST, must FAIL)
-- [ ] T029 [US2] Write E2E test (`#[ignore]`): call `iris_select_container(name="iris-dev-iris")`, then `check_config` → verify `connection_source: "iris_select_container"` and `container: "iris-dev-iris"` in `test_live_reload_e2e.rs` (WRITE FIRST, must FAIL)
-- [ ] T030 [US2] Write E2E test (`#[ignore]`): call `iris_select_container(name="iris-dev-iris")`, then `iris_execute(code="write $ZVersion,!")` → verify output is from iris-dev-iris (not previously connected container) in `test_live_reload_e2e.rs` (WRITE FIRST, must FAIL)
+- [x] T027 [P] [US2] Write unit test: `iris_select_container` with unreachable container → existing connection preserved, error returned in `test_live_reload.rs` (WRITE FIRST, must FAIL)
+- [x] T028 [P] [US2] Write unit test: after simulated `iris_select_container` swap, `connection.lock().source == ConnectionSource::IrisSelectContainer` in `test_live_reload.rs` (WRITE FIRST, must FAIL)
+- [x] T029 [US2] Write E2E test (`#[ignore]`): call `iris_select_container(name="iris-dev-iris")`, then `check_config` → verify `connection_source: "iris_select_container"` and `container: "iris-dev-iris"` in `test_live_reload_e2e.rs` (WRITE FIRST, must FAIL)
+- [x] T030 [US2] Write E2E test (`#[ignore]`): call `iris_select_container(name="iris-dev-iris")`, then `iris_execute(code="write $ZVersion,!")` → verify output is from iris-dev-iris (not previously connected container) in `test_live_reload_e2e.rs` (WRITE FIRST, must FAIL)
 
 ### TDD Gate
 
-- [ ] T031 [US2] **GATE**: Confirm T027–T030 FAIL before implementation
+- [x] T031 [US2] **GATE**: Confirm T027–T030 FAIL before implementation
 
 ### Implementation for US2
 
-- [ ] T032 [US2] Rewrite `iris_select_container` handler in `crates/iris-dev-core/src/tools/mod.rs` — after successful probe, lock `self.connection`, replace with `ConnectionState::from_iris(new_conn, ConnectionSource::IrisSelectContainer, None)`, unlock; return response with `"switched": true`; on failure return error without modifying connection
-- [ ] T033 [US2] Remove the "restart required" note from `iris_select_container` response and tool description in `mod.rs`
-- [ ] T034 [US2] **GATE-GREEN**: Run E2E T029 and T030 — both must pass
+- [x] T032 [US2] Rewrite `iris_select_container` handler in `crates/iris-dev-core/src/tools/mod.rs` — after successful probe, lock `self.connection`, replace with `ConnectionState::from_iris(new_conn, ConnectionSource::IrisSelectContainer, None)`, unlock; return response with `"switched": true`; on failure return error without modifying connection
+- [x] T033 [US2] Remove the "restart required" note from `iris_select_container` response and tool description in `mod.rs`
+- [x] T034 [US2] **GATE-GREEN**: Run E2E T029 and T030 — both must pass
 
 **Phase gate**: T029 + T030 E2E tests pass. `iris_select_container` actually switches the active connection.
 
@@ -118,20 +118,20 @@
 
 ### Tests for US3 (write first — must FAIL before implementation)
 
-- [ ] T035 [P] [US3] Write unit test: `check_config` with `iris=None` → returns all 9 required fields, `connected: false`, no `IRIS_UNREACHABLE` error in `test_live_reload.rs` (WRITE FIRST, must FAIL)
-- [ ] T035b [P] [US3] Write unit test: `check_config` with `config_watcher=None` (env-var-only session) → `config_file: null`, `connection_source: "env_vars"` (FR-008 coverage) in `test_live_reload.rs` (WRITE FIRST, must FAIL)
-- [ ] T036 [P] [US3] Write unit test: all 4 `ConnectionSource` variants serialize to correct `connection_source` string values in `test_live_reload.rs` (WRITE FIRST, must FAIL)
-- [ ] T037 [US3] Write E2E test (`#[ignore]`): call `check_config` after session start → verify `connected: true`, `iris_version` populated, `write_tools_enabled: true`, `connection_source` one of valid values in `test_live_reload_e2e.rs` (WRITE FIRST, must FAIL)
+- [x] T035 [P] [US3] Write unit test: `check_config` with `iris=None` → returns all 9 required fields, `connected: false`, no `IRIS_UNREACHABLE` error in `test_live_reload.rs` (WRITE FIRST, must FAIL)
+- [x] T035b [P] [US3] Write unit test: `check_config` with `config_watcher=None` (env-var-only session) → `config_file: null`, `connection_source: "env_vars"` (FR-008 coverage) in `test_live_reload.rs` (WRITE FIRST, must FAIL)
+- [x] T036 [P] [US3] Write unit test: all 4 `ConnectionSource` variants serialize to correct `connection_source` string values in `test_live_reload.rs` (WRITE FIRST, must FAIL)
+- [x] T037 [US3] Write E2E test (`#[ignore]`): call `check_config` after session start → verify `connected: true`, `iris_version` populated, `write_tools_enabled: true`, `connection_source` one of valid values in `test_live_reload_e2e.rs` (WRITE FIRST, must FAIL)
 
 ### TDD Gate
 
-- [ ] T038 [US3] **GATE**: Confirm T035–T035b–T036–T037 all FAIL before implementation
+- [x] T038 [US3] **GATE**: Confirm T035–T035b–T036–T037 all FAIL before implementation
 
 ### Implementation for US3
 
-- [ ] T039 [US3] Implement `check_config` tool handler in `crates/iris-dev-core/src/tools/mod.rs` — lock `self.connection`, read `ConnectionState`, build JSON response with all required fields (`connected`, `host`, `port`, `namespace`, `container`, `config_file`, `config_loaded_at` as ISO 8601, `iris_version`, `write_tools_enabled`, `connection_source`); do NOT call `get_iris()` or make any network calls; always return `ok_json(...)`
-- [ ] T040 [US3] Add `check_config` to all three toolset registration lists in `mod.rs` (Baseline, Nostub, Merged — it's read-only and has no docker dependency)
-- [ ] T041 [US3] **GATE-GREEN**: Run E2E T037 — must pass
+- [x] T039 [US3] Implement `check_config` tool handler in `crates/iris-dev-core/src/tools/mod.rs` — lock `self.connection`, read `ConnectionState`, build JSON response with all required fields (`connected`, `host`, `port`, `namespace`, `container`, `config_file`, `config_loaded_at` as ISO 8601, `iris_version`, `write_tools_enabled`, `connection_source`); do NOT call `get_iris()` or make any network calls; always return `ok_json(...)`
+- [x] T040 [US3] Add `check_config` to all three toolset registration lists in `mod.rs` (Baseline, Nostub, Merged — it's read-only and has no docker dependency)
+- [x] T041 [US3] **GATE-GREEN**: Run E2E T037 — must pass
 
 **Phase gate**: T037 E2E passes. `check_config` returns accurate snapshot in all states.
 
@@ -139,12 +139,12 @@
 
 ## Phase 6: Polish & Cross-Cutting
 
-- [ ] T042 [P] Add `check_config` to README.md tool table — mark as `—` (no docker required), description: "Inspect active IRIS connection state — host, container, config file, last loaded, write tools status. Always succeeds."
-- [ ] T043 [P] Update `iris_list_containers` tool description to mention `iris_select_container` now actually switches the connection (remove restart caveat) in `crates/iris-dev-core/src/tools/mod.rs`
-- [ ] T044 [P] Run `cargo clippy --all-targets -- -D warnings` — must be clean
-- [ ] T045 [P] Run `cargo fmt --all -- --check` — must be clean
-- [ ] T046 [P] Run full unit test suite: `cargo test -p iris-dev-core` — all unit tests pass, no regressions
-- [ ] T047 [P] Run all E2E tests: `IRIS_HOST=localhost IRIS_WEB_PORT=52780 cargo test --test test_live_reload_e2e -- --ignored` — all 4 E2E tests pass
+- [x] T042 [P] Add `check_config` to README.md tool table — mark as `—` (no docker required), description: "Inspect active IRIS connection state — host, container, config file, last loaded, write tools status. Always succeeds."
+- [x] T043 [P] Update `iris_list_containers` tool description to mention `iris_select_container` now actually switches the connection (remove restart caveat) in `crates/iris-dev-core/src/tools/mod.rs`
+- [x] T044 [P] Run `cargo clippy --all-targets -- -D warnings` — must be clean
+- [x] T045 [P] Run `cargo fmt --all -- --check` — must be clean
+- [x] T046 [P] Run full unit test suite: `cargo test -p iris-dev-core` — all unit tests pass, no regressions
+- [x] T047 [P] Run all E2E tests: `IRIS_HOST=localhost IRIS_WEB_PORT=52780 cargo test --test test_live_reload_e2e -- --ignored` — all 4 E2E tests pass
 
 ---
 

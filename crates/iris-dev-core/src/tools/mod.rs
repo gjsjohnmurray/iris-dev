@@ -1363,20 +1363,11 @@ impl IrisTools {
             "debug_get_error_logs",
             "iris_generate",
             "iris_generate_class",
-            // Docker exec — 16
+            // Docker exec
             "iris_test",
             "debug_map_int_to_cls",
             "debug_source_map",
             "iris_source_control",
-            "interop_production_status",
-            "interop_production_start",
-            "interop_production_stop",
-            "interop_production_update",
-            "interop_production_needs_update",
-            "interop_production_recover",
-            "interop_logs",
-            "interop_queues",
-            "interop_message_search",
             "skill",
             "skill_propose",
             "skill_optimize",
@@ -1385,7 +1376,9 @@ impl IrisTools {
             "skill_community",
             "skill_community_install",
             "kb",
-            // 024-interop-depth (merged only)
+            // Interoperability — available in all tiers (036: removed individual stubs)
+            "iris_production",
+            "iris_interop_query",
             "iris_production_item",
             "iris_credential_list",
             "iris_credential_manage",
@@ -1406,31 +1399,18 @@ impl IrisTools {
             "skill_community_install",
         ];
 
-        // Tools removed in merged (on top of stubs) — 10 removed, 4 added → 29-10+4=23
+        // Tools removed in merged (on top of stubs)
+        // 036: individual interop stubs removed entirely; merged dispatchers now in all tiers
         let merged_removed: &[&str] = &[
             "debug_capture_packet",
             "debug_get_error_logs",
             "debug_map_int_to_cls",
             "debug_source_map",
-            "interop_production_status",
-            "interop_production_start",
-            "interop_production_stop",
-            "interop_production_update",
-            "interop_production_needs_update",
-            "interop_production_recover",
         ];
-        let merged_removed_2: &[&str] = &[] as &[&str]; // placeholder, counts handled above
+        let merged_removed_2: &[&str] = &[] as &[&str]; // placeholder
         let merged_added: &[&str] = &[
             "iris_debug",
-            "iris_production",
-            "iris_interop_query",
             "iris_containers",
-            // 024-interop-depth
-            "iris_production_item",
-            "iris_credential_list",
-            "iris_credential_manage",
-            "iris_lookup_manage",
-            "iris_lookup_transfer",
             // 026-admin-tools
             "iris_admin",
             // 027-progressive-disclosure
@@ -1501,7 +1481,9 @@ impl IrisTools {
             router.remove_route(name);
         }
 
-        // For merged toolset: remove original tools replaced by merged dispatchers (T033).
+        // For merged toolset: remove debug tools replaced by iris_debug dispatcher.
+        // 036: individual interop stubs removed entirely — iris_production/iris_interop_query
+        // are now available in all tiers, so no pruning needed for them.
         if toolset == Toolset::Merged {
             let merged_replaced: &[&str] = &[
                 // Replaced by iris_debug (FR-007)
@@ -1509,53 +1491,28 @@ impl IrisTools {
                 "debug_get_error_logs",
                 "debug_map_int_to_cls",
                 "debug_source_map",
-                // Replaced by iris_production (FR-008)
-                "interop_production_status",
-                "interop_production_start",
-                "interop_production_stop",
-                "interop_production_update",
-                "interop_production_needs_update",
-                "interop_production_recover",
                 // agent_info removed (FR-011)
                 "agent_info",
-            ];
-            for name in merged_replaced {
-                router.remove_route(name);
-            }
-            // Note: iris_interop_query and iris_containers are added via #[tool_router];
-            // interop_logs/queues/message_search and list/select/start_sandbox remain in
-            // the router for baseline/nostub but are removed here for merged.
-            let interop_query_replaced: &[&str] = &[
-                "interop_logs",
-                "interop_queues",
-                "interop_message_search",
+                // iris_containers replaces these in merged
                 "iris_list_containers",
                 "iris_select_container",
                 "iris_start_sandbox",
             ];
-            for name in interop_query_replaced {
+            for name in merged_replaced {
                 router.remove_route(name);
             }
         } else {
-            // For baseline and nostub: remove the merged dispatcher tools
-            // (they're registered by #[tool_router] but shouldn't appear in these toolsets)
-            let merged_tools: &[&str] = &[
+            // For baseline and nostub: remove merged-only dispatcher tools
+            // (iris_production/iris_interop_query/iris_production_item are now available everywhere)
+            let merged_only: &[&str] = &[
                 "iris_debug",
-                "iris_production",
-                "iris_interop_query",
                 "iris_containers",
-                // 024-interop-depth
-                "iris_production_item",
-                "iris_credential_list",
-                "iris_credential_manage",
-                "iris_lookup_manage",
-                "iris_lookup_transfer",
                 // 026-admin-tools
                 "iris_admin",
                 // 027-progressive-disclosure
                 "iris_get_log",
             ];
-            for name in merged_tools {
+            for name in merged_only {
                 router.remove_route(name);
             }
         }
@@ -1570,7 +1527,8 @@ impl IrisTools {
                     "iris-dev: write tool gate evaluated"
                 );
                 // Remove write-capable tools if not allowed (issue #26 env guard).
-                if !write_tools_enabled && toolset == Toolset::Merged {
+                // iris_production_item is write-capable; available in all tiers but gated on prod.
+                if !write_tools_enabled {
                     let write_gated: &[&str] = &["iris_production_item", "iris_credential_manage"];
                     for name in write_gated {
                         router.remove_route(name);
@@ -3643,85 +3601,6 @@ Methods:
             "session_calls": session_calls,
             "learning_enabled": learning_enabled,
         }))
-    }
-
-    #[tool(
-        description = "Returns the current state of the running IRIS Interoperability production. With full_status=true, includes per-component breakdown."
-    )]
-    async fn interop_production_status(
-        &self,
-        Parameters(p): Parameters<interop::ProductionStatusParams>,
-    ) -> Result<CallToolResult, McpError> {
-        interop::interop_production_status_impl(self.iris_arc().as_deref(), p).await
-    }
-
-    #[tool(description = "Start a named IRIS Interoperability production.")]
-    async fn interop_production_start(
-        &self,
-        Parameters(p): Parameters<interop::ProductionNameParams>,
-    ) -> Result<CallToolResult, McpError> {
-        interop::interop_production_start_impl(self.iris_arc().as_deref(), p).await
-    }
-
-    #[tool(
-        description = "Stop the running IRIS Interoperability production with optional timeout and force."
-    )]
-    async fn interop_production_stop(
-        &self,
-        Parameters(p): Parameters<interop::ProductionStopParams>,
-    ) -> Result<CallToolResult, McpError> {
-        interop::interop_production_stop_impl(self.iris_arc().as_deref(), p).await
-    }
-
-    #[tool(description = "Hot-apply configuration changes to the running production.")]
-    async fn interop_production_update(
-        &self,
-        Parameters(p): Parameters<interop::ProductionUpdateParams>,
-    ) -> Result<CallToolResult, McpError> {
-        interop::interop_production_update_impl(self.iris_arc().as_deref(), p).await
-    }
-
-    #[tool(
-        description = "Check if the production configuration has changed and needs to be updated."
-    )]
-    async fn interop_production_needs_update(
-        &self,
-        Parameters(p): Parameters<interop::ProductionNeedsUpdateParams>,
-    ) -> Result<CallToolResult, McpError> {
-        interop::interop_production_needs_update_impl(self.iris_arc().as_deref(), p).await
-    }
-
-    #[tool(description = "Recover a troubled IRIS Interoperability production.")]
-    async fn interop_production_recover(
-        &self,
-        Parameters(p): Parameters<interop::ProductionRecoverParams>,
-    ) -> Result<CallToolResult, McpError> {
-        interop::interop_production_recover_impl(self.iris_arc().as_deref(), p).await
-    }
-
-    #[tool(
-        description = "Get recent Interoperability production log entries. Filter by log_type (comma-separated: error,warning,info,alert) and component name."
-    )]
-    async fn interop_logs(
-        &self,
-        Parameters(p): Parameters<interop::LogsParams>,
-    ) -> Result<CallToolResult, McpError> {
-        interop::interop_logs_impl(self.iris_arc().as_deref(), p).await
-    }
-
-    #[tool(description = "Get all current Interoperability message queues and their depths.")]
-    async fn interop_queues(&self, _: Parameters<NoParams>) -> Result<CallToolResult, McpError> {
-        interop::interop_queues_impl(self.iris_arc().as_deref()).await
-    }
-
-    #[tool(
-        description = "Search the Interoperability message archive by source, target, or message class."
-    )]
-    async fn interop_message_search(
-        &self,
-        Parameters(p): Parameters<interop::MessageSearchParams>,
-    ) -> Result<CallToolResult, McpError> {
-        interop::interop_message_search_impl(self.iris_arc().as_deref(), p).await
     }
 
     #[tool(

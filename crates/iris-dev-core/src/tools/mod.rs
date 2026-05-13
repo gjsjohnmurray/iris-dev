@@ -8,6 +8,28 @@ use schemars::JsonSchema;
 use serde::Deserialize;
 use std::collections::VecDeque;
 use std::sync::Arc;
+
+/// Wrapper for tools that accept free-form JSON parameters.
+/// Uses a manual JsonSchema impl to emit `{"type":"object"}` instead of
+/// schemars' default `{"title":"AnyValue"}`, which Claude Code rejects.
+#[derive(Debug, Deserialize)]
+pub struct AnyParams(pub serde_json::Value);
+
+impl JsonSchema for AnyParams {
+    fn schema_name() -> std::borrow::Cow<'static, str> {
+        "AnyParams".into()
+    }
+    fn json_schema(_gen: &mut schemars::SchemaGenerator) -> schemars::Schema {
+        schemars::json_schema!({"type": "object"})
+    }
+}
+
+impl std::ops::Deref for AnyParams {
+    type Target = serde_json::Value;
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
 pub mod admin;
 pub mod doc;
 pub mod info;
@@ -3751,7 +3773,7 @@ Methods:
     )]
     async fn iris_production(
         &self,
-        Parameters(p): Parameters<serde_json::Value>,
+        Parameters(p): Parameters<AnyParams>,
     ) -> Result<CallToolResult, McpError> {
         let action = p.get("action").and_then(|v| v.as_str()).unwrap_or("status");
         let _iris_arc_hold = self.iris_arc();
@@ -3884,7 +3906,7 @@ Methods:
     )]
     async fn iris_interop_query(
         &self,
-        Parameters(p): Parameters<serde_json::Value>,
+        Parameters(p): Parameters<AnyParams>,
     ) -> Result<CallToolResult, McpError> {
         let what = p.get("what").and_then(|v| v.as_str()).unwrap_or("logs");
         let _iris_arc_hold = self.iris_arc();
@@ -3945,7 +3967,7 @@ Methods:
     )]
     async fn iris_containers(
         &self,
-        Parameters(p): Parameters<serde_json::Value>,
+        Parameters(p): Parameters<AnyParams>,
     ) -> Result<CallToolResult, McpError> {
         let action = p.get("action").and_then(|v| v.as_str()).unwrap_or("list");
         let name = p
@@ -3992,7 +4014,7 @@ Methods:
     )]
     async fn iris_production_item(
         &self,
-        Parameters(p): Parameters<serde_json::Value>,
+        Parameters(p): Parameters<AnyParams>,
     ) -> Result<CallToolResult, McpError> {
         let action = p
             .get("action")
@@ -4039,7 +4061,7 @@ Methods:
     )]
     async fn iris_credential_list(
         &self,
-        Parameters(p): Parameters<serde_json::Value>,
+        Parameters(p): Parameters<AnyParams>,
     ) -> Result<CallToolResult, McpError> {
         let namespace = p
             .get("namespace")
@@ -4060,7 +4082,7 @@ Methods:
     )]
     async fn iris_credential_manage(
         &self,
-        Parameters(p): Parameters<serde_json::Value>,
+        Parameters(p): Parameters<AnyParams>,
     ) -> Result<CallToolResult, McpError> {
         let result = interop::interop_credential_manage_impl(
             self.iris_arc().as_deref(),
@@ -4102,7 +4124,7 @@ Methods:
     )]
     async fn iris_lookup_manage(
         &self,
-        Parameters(p): Parameters<serde_json::Value>,
+        Parameters(p): Parameters<AnyParams>,
     ) -> Result<CallToolResult, McpError> {
         let result = interop::interop_lookup_manage_impl(
             self.iris_arc().as_deref(),
@@ -4138,7 +4160,7 @@ Methods:
     )]
     async fn iris_lookup_transfer(
         &self,
-        Parameters(p): Parameters<serde_json::Value>,
+        Parameters(p): Parameters<AnyParams>,
     ) -> Result<CallToolResult, McpError> {
         let result = interop::interop_lookup_transfer_impl(
             self.iris_arc().as_deref(),
@@ -4173,7 +4195,7 @@ Methods:
     )]
     async fn iris_admin(
         &self,
-        Parameters(p): Parameters<serde_json::Value>,
+        Parameters(p): Parameters<AnyParams>,
     ) -> Result<CallToolResult, McpError> {
         let action = p.get("action").and_then(|v| v.as_str()).unwrap_or("");
         let _iris_arc_hold = self.iris_arc();

@@ -466,13 +466,20 @@ impl IrisConnection {
     /// Build a reqwest Client suitable for Atelier REST calls.
     /// TLS certificate validation is enabled by default; set `IRIS_INSECURE=true` to disable.
     pub fn http_client() -> anyhow::Result<reqwest::Client> {
+        // IRIS_INSECURE=true or IRIS_TLS_VERIFY=false both disable TLS cert validation.
         let insecure = std::env::var("IRIS_INSECURE")
+            .ok()
             .map(|v| v == "true" || v == "1")
-            .unwrap_or(false);
+            .unwrap_or_else(|| {
+                std::env::var("IRIS_TLS_VERIFY")
+                    .map(|v| v == "false" || v == "0")
+                    .unwrap_or(false)
+            });
         Ok(reqwest::Client::builder()
             .timeout(std::time::Duration::from_secs(30))
             .danger_accept_invalid_certs(insecure)
             .cookie_store(true) // reuse CSP sessions to avoid license slot exhaustion (#43)
+            .tcp_keepalive(std::time::Duration::from_secs(20)) // prevent NAT/firewall from silently dropping idle connections (#44)
             .build()?)
     }
 

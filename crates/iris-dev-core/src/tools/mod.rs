@@ -2066,7 +2066,7 @@ impl IrisTools {
         // the objectgenerator transaction boundary; SQL %Save() does not).
         // We write the run index out and return it to identify the run in the next step.
         let run_code = format!(
-            r#"do ##class(%UnitTest.Manager).RunTest("{pattern}","/noload/run/verbose=1/nodelete","{token}")"#,
+            r#"do ##class(%UnitTest.Manager).RunTest("{pattern}","/verbose=1/nodelete","{token}")"#,
             token = correlation_token,
             pattern = safe_pattern,
         );
@@ -2120,6 +2120,7 @@ impl IrisTools {
         //   "      TestFoo passed"          ← method result (no parens, no timing)
         //   "      TestFoo FAILED -- <msg>" ← method failure
         //   "    ClassName passed"
+        tracing::debug!(output = %run_output.trim(), "iris_test raw RunTest output");
         for line in run_output.lines() {
             let trimmed = line.trim();
             // Class begin: "IrisDevE2E.SmokeTest begins ..."  (contains dot, no parens)

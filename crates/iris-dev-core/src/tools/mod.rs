@@ -2158,8 +2158,12 @@ impl IrisTools {
                         .trim()
                         .to_string()
                 };
+                // Skip suite-level result lines (e.g. "MyClass\Sub FAILED") — these contain
+                // path separators and are not individual test methods.
                 if method_name.is_empty()
                     || (!method_name.starts_with("Test") && !method_name.starts_with("test"))
+                    || method_name.contains('\\')
+                    || method_name.contains('.')
                 {
                     continue;
                 }

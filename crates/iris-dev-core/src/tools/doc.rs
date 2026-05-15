@@ -281,6 +281,17 @@ async fn do_write(
     if !resp.status().is_success() {
         return err_json("IRIS_UNREACHABLE", &format!("HTTP {}", resp.status()));
     }
+    // Check body for Atelier-level errors (200 OK with status.errors, e.g. build 110
+    // SetTextFromString NULL namespace bug via web gateway).
+    let put_body: serde_json::Value = resp.json().await.unwrap_or_default();
+    if let Some(errs) = put_body["status"]["errors"].as_array() {
+        if !errs.is_empty() {
+            let msg = errs[0]["error"]
+                .as_str()
+                .unwrap_or("Document upload failed");
+            return err_json("UPLOAD_FAILED", msg);
+        }
+    }
 
     // Write open hint for VS Code auto-open
     crate::tools::write_open_hint(namespace, name);

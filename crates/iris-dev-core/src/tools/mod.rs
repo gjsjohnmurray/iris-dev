@@ -1760,6 +1760,17 @@ impl IrisTools {
                         &format!("PUT {} returned HTTP {}", doc_name, put_resp.status()),
                     );
                 }
+                // Check PUT response body for Atelier-level errors (200 OK with status.errors
+                // can occur on some IRIS builds when the upload fails internally, e.g. build 110
+                // SetTextFromString NULL namespace bug).
+                let put_body: serde_json::Value = put_resp.json().await.unwrap_or_default();
+                if let Some(errs) = put_body["status"]["errors"].as_array() {
+                    if !errs.is_empty() {
+                        let msg = errs[0]["error"].as_str().unwrap_or("Upload failed");
+                        self.record_call("iris_compile", false);
+                        return err_json("UPLOAD_FAILED", msg);
+                    }
+                }
                 // Compile the uploaded document
                 let local_src = p.target.clone();
                 let compile_url = iris.versioned_ns_url(

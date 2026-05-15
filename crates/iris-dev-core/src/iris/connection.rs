@@ -460,7 +460,15 @@ impl IrisConnection {
             .json(&serde_json::json!({"query": sql, "parameters": params}))
             .send()
             .await?;
-        Ok(resp.json().await?)
+        let body: serde_json::Value = resp.json().await?;
+        // Surface Atelier-level errors returned as 200 OK with status.errors in body.
+        if let Some(errs) = body["status"]["errors"].as_array() {
+            if !errs.is_empty() {
+                let msg = errs[0]["error"].as_str().unwrap_or("Atelier query error");
+                anyhow::bail!("{}", msg);
+            }
+        }
+        Ok(body)
     }
 
     /// Build a reqwest Client suitable for Atelier REST calls.

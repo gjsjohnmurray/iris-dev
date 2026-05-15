@@ -89,31 +89,41 @@ impl CompileCommand {
                         .trim_start_matches('.')
                         .to_string()
                 });
-            let cls_text_crlf = cls_text
-                .replace("\r\n", "\n")
-                .replace('\r', "\n")
-                .replace('\n', "\r\n");
             // FR-017/Mo3: use parameterized placeholders for both cls_name and cls_text.
-            let set_result = iris.query(
-                "SELECT $SYSTEM.Status.IsOK(##class(%Compiler.UDL.TextServices).SetTextFromString(NULL,?,?))",
-                vec![
-                    serde_json::Value::String(cls_name.clone()),
-                    serde_json::Value::String(cls_text_crlf),
-                ],
+            // Upload via Atelier PUT /doc/<name> then compile via ObjectScript.
+            // This avoids the broken SELECT $SYSTEM.* approach (#53) and works
+            // across all IRIS builds and web gateway configurations.
+            let put_url = iris.versioned_ns_url(
                 &self.namespace,
-                &client,
-            ).await;
-            match set_result {
-                Ok(_) => format!(
-                    "Set sc=$SYSTEM.OBJ.Compile(\"{}\",\"{}\") If $System.Status.IsOK(sc) {{Write \"OK\"}} Else {{Write $System.Status.GetErrorText(sc)}}",
-                    cls_name, self.flags
+                &format!(
+                    "/doc/{}?ignoreConflict=1",
+                    urlencoding::encode(&format!("{}.cls", cls_name))
                 ),
-                Err(e) => {
-                    let result = serde_json::json!({"success": false, "error_code": "IRIS_COMPILE_FAILED", "error": e.to_string(), "target": target});
+            );
+            let lines: Vec<&str> = cls_text.lines().collect();
+            let put_resp = client
+                .put(&put_url)
+                .basic_auth(&iris.username, Some(&iris.password))
+                .json(&serde_json::json!({"enc": false, "content": lines}))
+                .send()
+                .await
+                .context("PUT /doc failed")?;
+            if !put_resp.status().is_success() {
+                anyhow::bail!("Upload failed: HTTP {}", put_resp.status());
+            }
+            let put_body: serde_json::Value = put_resp.json().await.unwrap_or_default();
+            if let Some(errs) = put_body["status"]["errors"].as_array() {
+                if !errs.is_empty() {
+                    let msg = errs[0]["error"].as_str().unwrap_or("Upload failed");
+                    let result = serde_json::json!({"success": false, "error_code": "UPLOAD_FAILED", "error": msg, "target": target});
                     output_result(&result, &self.format);
                     std::process::exit(1);
                 }
             }
+            format!(
+                "Set sc=$SYSTEM.OBJ.Compile(\"{}\",\"{}\") If $System.Status.IsOK(sc) {{Write \"OK\"}} Else {{Write $System.Status.GetErrorText(sc)}}",
+                cls_name, self.flags
+            )
         } else {
             format!(
                 "Set sc=$SYSTEM.OBJ.Compile(\"{}\",\"{}\") If $System.Status.IsOK(sc) {{Write \"OK\"}} Else {{Write $System.Status.GetErrorText(sc)}}",
